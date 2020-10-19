@@ -30,6 +30,8 @@ contract Dao {
         voted or not, true for has voted, false for hasn't voted */
         uint256 threshold;  /** threshold is the number of tokens which 
         existed at the time of the proposal's creation */
+        mapping (address => bool) hasSplit;
+        mapping (address => uint256) hasSplit;
     }
 
     constructor() public {
@@ -165,5 +167,13 @@ contract Dao {
 
     function getRandom() private pure returns(uint) {
         return 1;
+    }
+
+    function split() public {
+        require(!nowProposal.isSealed);
+        require(nowProposal.voteYesMap[msg.sender] > 0 || nowProposal.voteNoMap[msg.sender] > 0); // only the voted accounts can split
+        
+        nowProposal.splitStatus[msg.sender] = true; // update split status
+        nowProposal.splitValuation[msg.sender] = valuation;  // update the split valuation
     }
 }

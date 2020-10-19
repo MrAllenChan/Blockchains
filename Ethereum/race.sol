@@ -18,6 +18,8 @@ contract Dao {
     /** record all addresses that have tokens */
     address[] addresses;
 
+    mapping (address => bool) private withdrawMutex;
+
     /* define the Proposal struct, which contains
     the latest status of a proposal */
     struct Proposal {
@@ -77,16 +79,19 @@ contract Dao {
         require (totalBalance >= tokensToWithdraw);
         require (tokensToWithdraw > 0);
         require (addressExists(msg.sender)); /** only existing address can withdraw tokens */
-        
+
         /** Cannot withdraw tokens if the proposal is unsealed 
         and the address has voted, so it's valid withdraw
         operation only when proposal is sealed or proposal
         is unsealed but the address hasn't voted yet. */
         require (curProposal.isSealed || (!curProposal.didVote[msg.sender]));
-        
-        /** update balance first to avoid race-to-empty attack */
+        /** vulnurable to race-to-empty attack  */
+        (bool result,) = msg.sender.call.value(tokensToWithdraw * valuation)("");
+        if (!result) {
+            revert();
+        }
         balances[msg.sender] -= tokensToWithdraw;
-        msg.sender.transfer(tokensToWithdraw * valuation);
+        totalBalance -= tokensToWithdraw;
         return true;
     }
 
