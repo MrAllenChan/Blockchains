@@ -21,20 +21,17 @@ contract Dao {
     /* define the Proposal struct, which contains
     the latest status of a proposal */
     struct Proposal {
-        bool isSealed;        /** whether the proposal is sealed or unsealed */
-        uint256 totalYes;     /** number of yes votes on the proposal */
-        uint256 totalNo;      /** number of no votes on the proposal */
-        mapping (address => bool) voteRecord; /** record each address's vote choice, 
-        true for yes vote, false for no vote */
-        mapping (address => bool) didVote;    /** record whether each address has
-        voted or not, true for has voted, false for hasn't voted */
-        uint256 threshold;  /** threshold is the number of tokens which 
-        existed at the time of the proposal's creation */
+        bool isSealed;                        /** whether the proposal is sealed or unsealed */
+        uint256 totalYes;                     /** number of yes votes on the proposal */
+        uint256 totalNo;                      /** number of no votes on the proposal */
+        mapping (address => bool) voteRecord; /** record each address's vote choice, true for yes vote, false for no vote */
+        mapping (address => bool) didVote;    /** record whether each address has voted or not, true for has voted, false for hasn't voted */
+        uint256 threshold;                    /** threshold is the number of tokens which existed at the time of the proposal's creation */
     }
 
     constructor() public {
-        creator = msg.sender;     /** initialize proposal creator */
-        curator = creator;        /** initially the curator is the creator */
+        creator = msg.sender;        /** initialize proposal creator */
+        curator = creator;           /** initially the curator is the creator */
         curProposal.isSealed = true; /** initially the proposal is sealed */
     }
 

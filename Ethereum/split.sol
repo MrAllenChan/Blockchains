@@ -21,22 +21,19 @@ contract Dao {
     /* define the Proposal struct, which contains
     the latest status of a proposal */
     struct Proposal {
-        bool isSealed;        /** whether the proposal is sealed or unsealed */
-        uint256 totalYes;     /** number of yes votes on the proposal */
-        uint256 totalNo;      /** number of no votes on the proposal */
-        mapping (address => bool) voteRecord; /** record each address's vote choice, 
-        true for yes vote, false for no vote */
-        mapping (address => bool) didVote;    /** record whether each address has
-        voted or not, true for has voted, false for hasn't voted */
-        uint256 threshold;  /** threshold is the number of tokens which 
-        existed at the time of the proposal's creation */
+        bool isSealed;                        /** whether the proposal is sealed or unsealed */
+        uint256 totalYes;                     /** number of yes votes on the proposal */
+        uint256 totalNo;                      /** number of no votes on the proposal */
+        mapping (address => bool) voteRecord; /** record each address's vote choice, true for yes vote, false for no vote */
+        mapping (address => bool) didVote;    /** record whether each address has voted or not, true for has voted, false for hasn't voted */
+        uint256 threshold;                    /** threshold is the number of tokens which existed at the time of the proposal's creation */
         mapping (address => bool) hasSplit;
-        mapping (address => uint256) hasSplit;
+        mapping (address => uint256) splitPreValuation;
     }
 
     constructor() public {
-        creator = msg.sender;     /** initialize proposal creator */
-        curator = creator;        /** initially the curator is the creator */
+        creator = msg.sender;        /** initialize proposal creator */
+        curator = creator;           /** initially the curator is the creator */
         curProposal.isSealed = true; /** initially the proposal is sealed */
     }
 
@@ -52,6 +49,8 @@ contract Dao {
     /** Call this function to gain tokens (saved in balances and 
     totalBalance) at valuation exchange rate */
     function deposit() payable public {
+        require(curProposal.isSealed || !curProposal.hasSplit[msg.sender]);
+
         uint256 tokensGained = msg.value / valuation;
         totalBalance += tokensGained;
         balances[msg.sender] += tokensGained;
@@ -85,10 +84,14 @@ contract Dao {
         operation only when proposal is sealed or proposal
         is unsealed but the address hasn't voted yet. */
         require (curProposal.isSealed || (!curProposal.didVote[msg.sender]));
+        /** sealed and has split */
+        if (curProposal.hasSplit[msg.sender]) {
+            msg.sender.transfer(tokensToWithdraw * curProposal.splitPreValuation[msg.sender]);
+        } else { /** unsealed and hasn't voted, or sealed but no split */
+            msg.sender.transfer(tokensToWithdraw * valuation);
+        }
         
-        /** update balance first to avoid race-to-empty attack */
         balances[msg.sender] -= tokensToWithdraw;
-        msg.sender.transfer(tokensToWithdraw * valuation);
         return true;
     }
 
@@ -109,6 +112,8 @@ contract Dao {
         for (uint i = 0; i < addresses.length; i++) {
             curProposal.didVote[addresses[i]] = false;
             curProposal.voteRecord[addresses[i]] = false;
+            curProposal.hasSplit[addresses[i]] = false;
+            curProposal.splitPreValuation[addresses[i]] = 0;
         }
     }
 
@@ -170,10 +175,11 @@ contract Dao {
     }
 
     function split() public {
-        require(!nowProposal.isSealed);
-        require(nowProposal.voteYesMap[msg.sender] > 0 || nowProposal.voteNoMap[msg.sender] > 0); // only the voted accounts can split
-        
-        nowProposal.splitStatus[msg.sender] = true; // update split status
-        nowProposal.splitValuation[msg.sender] = valuation;  // update the split valuation
+        /** can only be called by someone who has voted on a 
+        proposal which is not yet sealed */
+        require(!curProposal.isSealed && curProposal.didVote[msg.sender]);
+        /** mark split status as true and record the previous valuation */
+        curProposal.hasSplit[msg.sender] = true;
+        curProposal.splitPreValuation[msg.sender] = valuation;
     }
 }
