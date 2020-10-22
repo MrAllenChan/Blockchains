@@ -171,7 +171,7 @@ contract Dao {
     }
 
     function getRandom() private pure returns(uint) {
-        return 1;
+        return 10;
     }
 
     function split() public {
