@@ -72,6 +72,7 @@ contract Dao {
         
         /** update balance first to avoid race-to-empty attack */
         balances[msg.sender] -= tokensToWithdraw;
+        totalBalance -= tokensToWithdraw;
         msg.sender.transfer(tokensToWithdraw * valuation / 10);
         return true;
     }

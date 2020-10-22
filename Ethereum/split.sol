@@ -42,6 +42,7 @@ contract Dao {
     /** Call this function to gain tokens (saved in balances and 
     totalBalance) at valuation exchange rate */
     function deposit() payable public {
+        /** must be sealed or unsealed but no split */
         require(curProposal.isSealed || !hasSplit[msg.sender]);
 
         uint256 tokensGained = msg.value / valuation * 10;
@@ -68,7 +69,7 @@ contract Dao {
     /** pays eth out at a rate of valuation for a specified number of tokens 
     note that the valuation is the current value, not the split valuation */
     function withdraw(uint256 tokensToWithdraw) public returns (bool _bool) {
-        /** total_balance - split_deposit must be larger than the amount */
+        /** total_balance - split_deposit must be larger than the amount to withdraw */
         require (balances[msg.sender] - splitPreDeposit[msg.sender] >= tokensToWithdraw);
         require (tokensToWithdraw > 0 && addressExists(msg.sender)); /** only existing address can withdraw tokens */
         /** Cannot withdraw tokens if the proposal is unsealed 
@@ -79,6 +80,7 @@ contract Dao {
 
         msg.sender.transfer(tokensToWithdraw * valuation / 10);
         balances[msg.sender] -= tokensToWithdraw;
+        totalBalance -= tokensToWithdraw;
         return true;
     }
 
@@ -91,6 +93,8 @@ contract Dao {
 
         msg.sender.transfer(tokensToWithdraw * splitPreValuation[msg.sender] / 10);
         balances[msg.sender] -= tokensToWithdraw;
+        totalBalance -= tokensToWithdraw;
+        splitPreDeposit[msg.sender] -= tokensToWithdraw;
         return true;
     }
     
@@ -107,8 +111,10 @@ contract Dao {
         for (uint i = 0; i < addresses.length; i++) {
             curProposal.didVote[addresses[i]] = false;
             curProposal.voteRecord[addresses[i]] = false;
+            /** reset split status when creating a new proposal */
             hasSplit[addresses[i]] = false;
             splitPreValuation[addresses[i]] = 0;
+            splitPreDeposit[addresses[i]] = 0;
         }
     }
 
