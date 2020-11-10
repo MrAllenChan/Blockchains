@@ -3,7 +3,7 @@ pragma solidity ^0.5.0;
 contract Dao {
     uint256 private totalBalance = 0;               /** An initial totalBalance of 0.0 */ 
     mapping (address => uint256) private balances;  /** A balances mapping from addresses to amounts */
-    uint256 private valuation = 10;                 /** A default valuation of 10, but in actual use the range will be (0.0, 10.0) */
+    uint256 private valuation = 10;                 /** A default valuation of 10, but in actual use the range will be (0.0, 10.0) with step 0.1 */
     address private creator;                        /** Creator of the contract */
     address private curator;                        /** Curator is able to create proposal and delegate responsibility to another address. */
     Proposal private curProposal;                   /** the proposal carried by the contract */
